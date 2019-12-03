@@ -210,20 +210,8 @@ function entryFile(file) {
 }
 function copyServiceWorkerFile(list) {
   // 拼接sw.js文件
-  const dateTime = new Date()
-  const buildTime = `${
-      dateTime.getFullYear()
-    }-${
-      dateTime.getMonth()
-    }-${
-      dateTime.getDate()
-    }|${
-      dateTime.getHours()
-    }:${
-      dateTime.getMinutes()
-    }:${
-      dateTime.getSeconds()
-    }`
+  const dateTime = new Date().toLocaleString()
+  const buildTime = dateTime.replace(' ', '|')
   // console.log('edition', buildTime)
   let SW_DATA = `
     // serviceWorker.js

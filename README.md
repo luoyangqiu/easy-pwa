@@ -3,7 +3,7 @@ Quickly upgrade your project to pwa
 助你快速将现有项目升级成为PWA
 创建初衷：
 PWA是一种非常不错的技术，目前而言虽然还不能像原生APP一样性能和体验，不过pwa这个技术的基础特性还是非常值得尝试的，特别是针对那些需要在弱网环境下使用的项目，只需要第一次加载完成之后，后期二次加载直接从用户本地读取缓存的serviceworker，抛开API接口数据响应的前提，资源文件加载速度几乎可以秒开，很多SPA单页应用项目，编译之后都会面临几个比较大的JS公共文件，每次加载会造成极大的浪费，所以使用PWA的第一步就是可以利用它的缓存机制对项目在弱网环境下进行资源加速；
-本项目[源码地址](https://github.com/luoyangqiu/easy-pwa)
+本项目[源码地址](https://github.com/youwasborntodo/easy-pwa)
 # 升级问题
 项目第一次在浏览器中安装成功serviceworker之后，后期升级均是无感知加载
 

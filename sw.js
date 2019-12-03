@@ -1,12 +1,23 @@
 
     // serviceWorker.js
-    const edition = 'easy-pwa:2019-11-1|20:17:42'
+    const edition = 'easy-pwa:2019-12-2|22:56:05'
     const fileList = [
-  'http://apps.bdimg.com/libs/jquery/1.6.4/jquery.js',
+  './style.css',
+      'app.a5d34gk6j24fd8fg3.js',
       '/img/emoji1.gif',
       '/img/emoji2.gif',
       '/img/emoji3.gif',
       '/img/emoji4.gif',
+      '/entry_sw.js',
+      '/entry_sw.js',
+      '/entry_sw.js',
+      '/entry_sw.js',
+      '/entry_sw.js',
+      '/entry_sw.js',
+      '/entry_sw.js',
+      '/entry_sw.js',
+      '/entry_sw.js',
+      '/entry_sw.js',
       
         ]  
     self.addEventListener('install', e => {
