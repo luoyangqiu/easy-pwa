@@ -15,11 +15,12 @@ const SW_MODEL_EXPORT = `self.addEventListener('install', e => {
                         // console.log('fileList.len===>', fileList.length)
                         if (index == fileList.length - 1) {
                             // 判断是否安装完成
-                            const myObj2 = {
-                                from: 'installing......',
-                                content: edition
-                            }
-                            arrived.postMessage(myObj2)
+                            console.log('files installed')
+                            // const myObj2 = {
+                            //     from: 'installing......',
+                            //     content: edition
+                            // }
+                            // arrived.postMessage(myObj2)
                             self.skipWaiting()
                         }
                     }).catch(err => {
@@ -45,28 +46,30 @@ const SW_MODEL_EXPORT = `self.addEventListener('install', e => {
             console.error(err)
         })
     }
-    self.addEventListener('installed', e => {
-        console.log('【service worker】====> ' + edition + 'is installed!')
-    })
+    // self.addEventListener('installed', e => {
+    //     console.log('【service worker】====> ' + edition + 'is installed!')
+    // })
 
     self.addEventListener('error', event => {
+        // 监听其它错误
         console.error('error==>', event)
     })
 
     self.addEventListener('unhandledrejection', event => {
+        // 跨域加载资源出错时
         console.error('unhandledrejection==>', event)
     })
 
     self.addEventListener('activate', e => {
         console.log('service worker ' + edition + ' is running!')
-        arrived.onmessage = function (e) {
-            console.log('activate========>', e.data)
-        }
-        const myObj2 = {
-            from: 'activate',
-            content: 'worker'
-        }
-        arrived.postMessage(myObj2)
+        // arrived.onmessage = function (e) {
+        //     console.log('activate========>', e.data)
+        // }
+        // const myObj2 = {
+        //     from: 'activate',
+        //     content: 'worker'
+        // }
+        // arrived.postMessage(myObj2)
         e.waitUntil(deleteCache())
     })
 
@@ -85,15 +88,9 @@ const SW_MODEL_EXPORT = `self.addEventListener('install', e => {
                     if (!response || response.status != 200 || response.type != 'basic') {
                         return response
                     }
-
+                    // 复制请求
                     const responseToCache = response.clone()
-                    console.log('cache_update_version===00000000000000>', edition)
-                    // console.log('window.sw_version=======', window.sw_version)
-                    console.log('fetchRequest===>', fetchRequest)
                     const getFile = fetchRequest.url.replace(fetchRequest.referrer, '/')
-                    console.log('getFile', getFile)
-                    console.log('fileList.includes', fileList.includes(getFile))
-
                     // if (fileList.includes(getFile)) {
                     // 判断当前请求的文件是否在允许缓存的文件配置列表中
                     caches.open(edition).then(cache => {
@@ -112,14 +109,17 @@ const SW_MODEL_EXPORT = `self.addEventListener('install', e => {
 const { JSDOM } = jsDom;
 const attrFileList = []
 const config = {
-  entryFileName: 'entry_sw.js',
+  entryScript: 'entry_sw.js',
+  fileName: null,
+  relativeFilePath: null,
+  isBuild: false,
   isEntry: false, // 判断是否指定入口文件
   isDefault: true // 是否执行默认操作
 }
 const exceptFile= [
   'node_modules',
   'package.json',
-  config.entryFileName
+  config.entryScript
 ]
 
 // 定义版本和参数选项
@@ -141,16 +141,33 @@ program.command('entry <file>')
     console.log('');
     console.log('Entry file【入口文件配置】:');
     console.log('');
-    console.log('becomepwa entry index.html [Default:默认为空自动寻找 index.html]');
+    console.log('easy-pwa entry index.html [Default:默认为空自动寻找 index.html]');
     console.log('');
   })
+
+program.command('build <file>')
+  .description('build 【file】package.json 脚本配置入口文件命令专用')
+  .action(function (file) {
+    // 判断有没有带入文件名，后期加入文件夹前缀功能
+    config.isEntry = true
+    config.isBuild = true
+    config.isDefault = true
+    entryFile(file)
+  }).on('--help', function () {
+    console.log('');
+    console.log('Entry file【入口文件配置】:');
+    console.log('');
+    console.log('easy-pwa entry index.html [Default:默认为空自动寻找 index.html]');
+    console.log('');
+  })
+
 program.command('--help')
     .description('查看当前帮助选项')
     .action(function () {
       config.isDefault = false
       console.log('entry <file>【入口文件配置】');
       console.log('');
-      console.log('becomepwa entry index.html [Default:默认为空自动寻找 index.html]');
+      console.log('easy-pwa entry index.html [Default:默认为空自动寻找 index.html]');
       console.log('');
     })
 // 必须在.parse()之前，因为node的emit()是即时的
@@ -183,35 +200,63 @@ const filesList = []
 
 function entryFile(file) {
   // 入口文件
-  const filePath = __dirname + "\\" + file
-  JSDOM.fromFile(filePath).then(res => {
-      const htmlText = res.serialize()
-      const replaceText = `
-      <script src="/${config.entryFileName}"></script></body>`
-      const newHTML = htmlText.replace(`</body>`, replaceText)
-      const fileName = file ? file : 'index.html'
-      createFile(fileName, newHTML)
-      const htmlDom = new JSDOM(res.serialize());
-      const parentDOM = htmlDom.window.document;
-      getChildNodes(parentDOM); 
-      copyServiceWorkerFile(attrFileList)
-  }).catch(() => {
-    const msg = `
+  let filePath = null
+  let fileName = null
+  let path = null
+  if (/\//mg.test(file)) {
+    //  判断是否带有路径
+    if (/(^.+\/)(\S+.html)$/mg.test(file)) {
+      const fileExec = /(^.+\/)(\S+.html)$/mg.exec(file)
+      path = fileExec[1]
+      fileName = fileExec[2]
+      config.fileName = fileName
+      config.relativeFilePath = path
+    } else {
+      throw new Error('请确认输入的路径格式是否正确！')
+    }
+  } else {
+    config.fileName = file
+    config.relativeFilePath = ''
+  }
+  let relativePath = __dirname
+  if (config.isBuild) {
+    // 判断是否为package.json 集成脚本构建
+    relativePath = relativePath.replace('\\node_modules\\easy-pwa', '')
+    filePath = relativePath
+  }
+  filePath = relativePath + "\\" + file
+  let htmlText = null
+  // console.log('filePath======>', filePath)
+  fs.readFile(filePath, 'utf-8', (err, data) => {
+    if (err) {
+          const msg = `
     错误提示【Error msg】
 
-    原因：未找到该文件: ${file}，请检查指定的入口文件是否存在！
+    原因：未找到该文件: ${filePath}，请检查指定的入口文件是否存在！
   
     提示：可以自定义入口文件,例如【entry index.html】 
 
     需要了解其它帮助信息可以输入【 --help】
-            `
-    console.log(msg)
+            `;
+          // console.log(msg);
+      console.error(msg);
+      return false
+    }
+    htmlText = data;
+    const replaceText = `<script src="/${config.entryScript}"></script></body>`;
+    const newHTML = htmlText.replace(`</body>`, replaceText);
+    createFile(file, newHTML);
+    const htmlDom = new JSDOM(htmlText);
+    const parentDOM = htmlDom.window.document;
+    getChildNodes(parentDOM);
+    attrFileList.push(config.fileName);
+    copyServiceWorkerFile(attrFileList);
   });
 }
 function copyServiceWorkerFile(list) {
   // 拼接sw.js文件
-  const dateTime = new Date().toLocaleString()
-  const buildTime = dateTime.replace(' ', '|')
+  const dateTime = new Date()
+  const buildTime = dateTime.toLocaleString().replace(' ', '|')
   // console.log('edition', buildTime)
   let SW_DATA = `
     // serviceWorker.js
@@ -271,8 +316,8 @@ function getAttrList(node) {
 
 function createServiceWorkerFile(data) {
   // 创建Service Worker文件
-  const fileName = 'sw.js'
-  const entryFileName = config.entryFileName
+  const serviceWorkerFileName = config.relativeFilePath + 'sw.js'
+  const entryScript = config.relativeFilePath + config.entryScript
   const indexFileData = `
   if (navigator.serviceWorker) {
     navigator.serviceWorker.register('/sw.js').then(res => {
@@ -315,49 +360,39 @@ function createServiceWorkerFile(data) {
   `
   const path = __dirname // 目前配置是当前路径，后期需要增加自定义路径功能，预留路径判断功能
   fs.exists(path, exists => {
-    // console.log(fileName)
-    // console.log(entryFileName)
-    // console.log(path)
     if (exists) {
       // 判断当前路径是否存在
-      createFile(fileName, data)
-      createFile(entryFileName, indexFileData)
+      createFile(serviceWorkerFileName, data)
+      createFile(entryScript, indexFileData)
     } else {
       fs.mkdir(path, err => {
         // 创建文件夹
         if(err) {
           return false
         } else {
-          createFile(fileName, data)
-          createFile(entryFileName, indexFileData)
+          createFile(serviceWorkerFileName, data)
+          createFile(entryScript, indexFileData)
         }
       })
     }
   })
 }
 
-function createFile (fileName, data) {
+function createFile (serviceWorkerFileName, data) {
   // 写入数据
-  fs.writeFileSync(fileName, data, err => {
-    if(err){
-      console.error(err)
-      return false
+  // console.log('开始写入', fileName)
+  fs.writeFile(serviceWorkerFileName, data, "utf-8", err => {
+    if (err) {
+      console.error(err);
+      return false;
     } else {
-      console.log(fileName, '写入成功')
+      console.log(serviceWorkerFileName, "写入成功");
     }
-  })
+  });
 }
 
 if (!config.isEntry && config.isDefault) {
   // readFileList(__dirname, filesList)
- 
+  // 默认执行文件
   entryFile('index.html')
-  // const data = filesList.toString()
-  //  console.log('attrFileList===>', attrFileList)
-  // const insertData = `
-  //    configList = [${attrFileList}]
-  // `
-  // createServiceWorkerFile(insertData)
-
 }
-// exports.default = entryFile

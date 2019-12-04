@@ -1,23 +1,14 @@
 
     // serviceWorker.js
-    const edition = 'easy-pwa:2019-12-2|22:56:05'
+    const edition = 'easy-pwa:2019-12-4|23:26:48'
     const fileList = [
-  './style.css',
-      'app.a5d34gk6j24fd8fg3.js',
+  'http://apps.bdimg.com/libs/jquery/1.6.4/jquery.js',
       '/img/emoji1.gif',
       '/img/emoji2.gif',
       '/img/emoji3.gif',
       '/img/emoji4.gif',
       '/entry_sw.js',
-      '/entry_sw.js',
-      '/entry_sw.js',
-      '/entry_sw.js',
-      '/entry_sw.js',
-      '/entry_sw.js',
-      '/entry_sw.js',
-      '/entry_sw.js',
-      '/entry_sw.js',
-      '/entry_sw.js',
+      'test.html',
       
         ]  
     self.addEventListener('install', e => {
@@ -30,11 +21,12 @@
                         // console.log('fileList.len===>', fileList.length)
                         if (index == fileList.length - 1) {
                             // 判断是否安装完成
-                            const myObj2 = {
-                                from: 'installing......',
-                                content: edition
-                            }
-                            arrived.postMessage(myObj2)
+                            console.log('files installed')
+                            // const myObj2 = {
+                            //     from: 'installing......',
+                            //     content: edition
+                            // }
+                            // arrived.postMessage(myObj2)
                             self.skipWaiting()
                         }
                     }).catch(err => {
@@ -60,28 +52,30 @@
             console.error(err)
         })
     }
-    self.addEventListener('installed', e => {
-        console.log('【service worker】====> ' + edition + 'is installed!')
-    })
+    // self.addEventListener('installed', e => {
+    //     console.log('【service worker】====> ' + edition + 'is installed!')
+    // })
 
     self.addEventListener('error', event => {
+        // 监听其它错误
         console.error('error==>', event)
     })
 
     self.addEventListener('unhandledrejection', event => {
+        // 跨域加载资源出错时
         console.error('unhandledrejection==>', event)
     })
 
     self.addEventListener('activate', e => {
         console.log('service worker ' + edition + ' is running!')
-        arrived.onmessage = function (e) {
-            console.log('activate========>', e.data)
-        }
-        const myObj2 = {
-            from: 'activate',
-            content: 'worker'
-        }
-        arrived.postMessage(myObj2)
+        // arrived.onmessage = function (e) {
+        //     console.log('activate========>', e.data)
+        // }
+        // const myObj2 = {
+        //     from: 'activate',
+        //     content: 'worker'
+        // }
+        // arrived.postMessage(myObj2)
         e.waitUntil(deleteCache())
     })
 
@@ -100,15 +94,9 @@
                     if (!response || response.status != 200 || response.type != 'basic') {
                         return response
                     }
-
+                    // 复制请求
                     const responseToCache = response.clone()
-                    console.log('cache_update_version===00000000000000>', edition)
-                    // console.log('window.sw_version=======', window.sw_version)
-                    console.log('fetchRequest===>', fetchRequest)
                     const getFile = fetchRequest.url.replace(fetchRequest.referrer, '/')
-                    console.log('getFile', getFile)
-                    console.log('fileList.includes', fileList.includes(getFile))
-
                     // if (fileList.includes(getFile)) {
                     // 判断当前请求的文件是否在允许缓存的文件配置列表中
                     caches.open(edition).then(cache => {
