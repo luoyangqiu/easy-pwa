@@ -218,7 +218,7 @@ function entryFile(file) {
     config.fileName = file
     config.relativeFilePath = ''
   }
-  let relativePath = __dirname
+  let relativePath = process.env.pwd
   if (config.isBuild) {
     // 判断是否为package.json 集成脚本构建
     relativePath = relativePath.replace('\\node_modules\\easy-pwa', '')
