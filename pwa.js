@@ -113,6 +113,7 @@ const config = {
   entryScript: 'entry_sw.js',
   defaultEntry: 'index.html', // 如果不指定入口文件，默认在执行目录下查找index.html
   relativeFilePath: null,
+  iconsPath: 'icons/',
   isBuild: false,
   isEntry: false, // 判断是否指定入口文件
   isDefault: true, // 是否执行默认操作      
@@ -362,29 +363,30 @@ const Manifest = `
       "background_color": "#ACE",
       "theme_color": "#ACE",
       "icons": [{
-            "src": "/icons/icon_s.png",
+            "src": "${config.iconsPath}icon_s.png",
             "sizes": "48x48",
             "type": "image/png"
           },{
-            "src": "/icons/icon.png",
+            "src": "${config.iconsPath}icon.png",
             "sizes": "96x96",
             "type": "image/png"
           },{
-            "src": "/icons/icon_m.png",
+            "src": "${config.iconsPath}icon_m.png",
             "sizes": "152x152",
             "type": "image/png"
           },{
-            "src": "/icons/icon_x.png",
+            "src": "${config.iconsPath}icon_x.png",
             "sizes": "192x192",
             "type": "image/png"
           },{
-            "src": "/icons/icon_xx.png",
+            "src": "${config.iconsPath}icon_xx.png",
             "sizes": "256x256",
             "type": "image/png"
           }]
     }
 `
-function createImageFile(source, target, targetPath) {
+
+function createImageFile(source, target) {
   // 创建manifest.json 图标
   fs.readFile(source, (err, buffer) => {
     if (err) {
@@ -400,35 +402,7 @@ function createImageFile(source, target, targetPath) {
       if (bufferList.length == config.icons.length) {
           bufferList.forEach(data => {
             // 处理异步问题
-            fs.exists(targetPath, exists => {
-              if (exists) {
-                // 判断路径是否存在
-                fs.writeFile(data.target, data.buffer, error => {
-                  if (error) {
-                    console.error(error)
-                    throw new Error('请检查图片格式或者目的路径是否正确！')
-                  } else {
-                    // console.log(data.target, "写入图片成功");
-                  }
-                })
-              } else {
-                fs.mkdir(targetPath, err => {
-                  // 创建文件夹
-                  if (err) {
-                    return false
-                  }
-                  fs.writeFile(data.target, data.buffer, error => {
-                    if (error) {
-                      console.error(error)
-                      throw new Error('请检查图片格式或者目的路径是否正确！')
-                    } else {
-                      // console.log(data.target, "写入图片成功");
-                    }
-                  })
-                })
-                // 创建文件夹
-              }
-            })
+            createFile(data.target, data.buffer)
           })
       }
     }
@@ -437,21 +411,28 @@ function createImageFile(source, target, targetPath) {
 const bufferList = []
 function createManifestFile() {
   // 创建manifest.json文件
-  let targetPath = config.relativePath + '/icons/'
-  config.icons.forEach(file => {
-    // console.log(file.src)
-    let target = null
-    const pathSplit = file.src.split('/')
-    const fileName = pathSplit[pathSplit.length - 1]
-    target = targetPath + fileName
-    // console.log('target===', target)
-    const source = __dirname + file.src
-    // console.log(source)
-    createImageFile(source, target, targetPath)
-  })
+  let targetPath = config.relativeFilePath + config.iconsPath;
+      const paths = __dirname + '/' + targetPath
+      fs.mkdir(paths, err => {
+        if (err) {
+          console.log(err)
+          throw new Error("创建目录失败！")
+        } else {
+          config.icons.forEach(file => {
+            // console.log(file.src)
+            let target = null
+            const pathSplit = file.src.split('/')
+            const fileName = pathSplit[pathSplit.length - 1]
+            target = targetPath + fileName
+            const source = __dirname + file.src
+            createImageFile(source, target)
+          })
+        }
+      })
+
   // console.log('bufferList==>', bufferList)
 
-  createFile('manifest.json', Manifest)
+  createFile(config.relativeFilePath + 'manifest.json', Manifest)
 }
 
 function createServiceWorkerFile(data) {
