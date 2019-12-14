@@ -3,7 +3,7 @@
       "name": "PWA应用",
       "short_name": "测试名称",
       "description": "这只是一个测试应用！",
-      "start_url": "test.html",
+      "start_url": "index.html",
       "display": "standalone",
       "orientation": "any",
       "background_color": "#ACE",

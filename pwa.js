@@ -274,13 +274,11 @@ function entryFile(file) {
     } else {
       newHTML = htmlText
     }  
-    if (!htmlText.includes(`<link rel="manifest" href="/manifest.json">`)) {
+    if (!newHTML.includes(`<link rel="manifest" href="/manifest.json">`)) {
       // 判断是否己经存在Manifest.json文件
       const replaceText = `<link rel="manifest" href="/manifest.json">
       </head>`;
-      newHTML = htmlText.replace(`</head>`, replaceText);
-    } else {
-      newHTML = htmlText
+      newHTML = newHTML.replace(`</head>`, replaceText);
     }
 
     createFile(file, newHTML);
