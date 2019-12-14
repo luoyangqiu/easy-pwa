@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path')
 const PKG = require('./package.json')
 const program = require("commander");
+const terser = require('terser')
 const jsDom = require("jsdom");
 const SW_MODEL_EXPORT = `self.addEventListener('install', e => {
         console.log('installing.........')
@@ -110,11 +111,33 @@ const { JSDOM } = jsDom;
 const attrFileList = []
 const config = {
   entryScript: 'entry_sw.js',
-  fileName: null,
+  defaultEntry: 'index.html', // 如果不指定入口文件，默认在执行目录下查找index.html
   relativeFilePath: null,
   isBuild: false,
   isEntry: false, // 判断是否指定入口文件
-  isDefault: true // 是否执行默认操作
+  isDefault: true, // 是否执行默认操作      
+  relativePath: process.cwd() ? process.cwd() : process.env.pwd,
+  icons: [{
+    "src": "/img/icon_s.png",
+    "sizes": "48x48",
+    "type": "image/png"
+  },{
+    "src": "/img/icon.png",
+    "sizes": "96x96",
+    "type": "image/png"
+  },{
+    "src": "/img/icon_m.png",
+    "sizes": "152x152",
+    "type": "image/png"
+  },{
+    "src": "/img/icon_x.png",
+    "sizes": "192x192",
+    "type": "image/png"
+  },{
+    "src": "/img/icon_xx.png",
+    "sizes": "256x256",
+    "type": "image/png"
+  }]
 }
 const exceptFile= [
   'node_modules',
@@ -209,50 +232,67 @@ function entryFile(file) {
       const fileExec = /(^.+\/)(\S+.html)$/mg.exec(file)
       path = fileExec[1]
       fileName = fileExec[2]
-      config.fileName = fileName
+      config.defaultEntry = fileName
       config.relativeFilePath = path
     } else {
       throw new Error('请确认输入的路径格式是否正确！')
     }
   } else {
-    config.fileName = file
+    config.defaultEntry = file
     config.relativeFilePath = ''
   }
-  let relativePath = process.env.pwd
+
+  // console.log("process.env====>", relativePath);
   if (config.isBuild) {
     // 判断是否为package.json 集成脚本构建
-    relativePath = relativePath.replace('\\node_modules\\easy-pwa', '')
-    filePath = relativePath
+    // relativePath = relativePath.replace('\\node_modules\\easy-pwa', '')
+    filePath = config.relativePath
   }
-  filePath = relativePath + "\\" + file
+  filePath = config.relativePath + "\\" + file
   let htmlText = null
   // console.log('filePath======>', filePath)
   fs.readFile(filePath, 'utf-8', (err, data) => {
     if (err) {
           const msg = `
-    错误提示【Error msg】
+          错误提示【Error msg】
 
-    原因：未找到该文件: ${filePath}，请检查指定的入口文件是否存在！
-  
-    提示：可以自定义入口文件,例如【entry index.html】 
+          原因：未找到该文件: ${filePath}，请检查指定的入口文件是否存在！
+        
+          提示：可以自定义入口文件,例如【entry index.html】 
 
-    需要了解其它帮助信息可以输入【 --help】
+          需要了解其它帮助信息可以输入【 --help】
             `;
-          // console.log(msg);
       console.error(msg);
       return false
     }
     htmlText = data;
-    const replaceText = `<script src="/${config.entryScript}"></script></body>`;
-    const newHTML = htmlText.replace(`</body>`, replaceText);
+    let newHTML = ''
+    if (!htmlText.includes(`<script src="/${config.entryScript}"></script>`)) {
+      // 判断是否己经存在注册入口文件
+      const replaceText = `<script src="/${config.entryScript}"></script></body>`;
+      newHTML = htmlText.replace(`</body>`, replaceText);
+    } else {
+      newHTML = htmlText
+    }  
+    if (!htmlText.includes(`<link rel="manifest" href="/manifest.json">`)) {
+      // 判断是否己经存在Manifest.json文件
+      const replaceText = `<link rel="manifest" href="/manifest.json">
+      </head>`;
+      newHTML = htmlText.replace(`</head>`, replaceText);
+    } else {
+      newHTML = htmlText
+    }
+
     createFile(file, newHTML);
     const htmlDom = new JSDOM(htmlText);
     const parentDOM = htmlDom.window.document;
     getChildNodes(parentDOM);
-    attrFileList.push(config.fileName);
+    // console.log(attrFileList)
+    attrFileList.push(config.defaultEntry);
     copyServiceWorkerFile(attrFileList);
   });
 }
+
 function copyServiceWorkerFile(list) {
   // 拼接sw.js文件
   const dateTime = new Date()
@@ -313,6 +353,108 @@ function getAttrList(node) {
   }
 }
 
+const Manifest = `
+    {
+      "name": "PWA应用",
+      "short_name": "测试名称",
+      "description": "这只是一个测试应用！",
+      "start_url": "${config.defaultEntry}",
+      "display": "standalone",
+      "orientation": "any",
+      "background_color": "#ACE",
+      "theme_color": "#ACE",
+      "icons": [{
+            "src": "/icons/icon_s.png",
+            "sizes": "48x48",
+            "type": "image/png"
+          },{
+            "src": "/icons/icon.png",
+            "sizes": "96x96",
+            "type": "image/png"
+          },{
+            "src": "/icons/icon_m.png",
+            "sizes": "152x152",
+            "type": "image/png"
+          },{
+            "src": "/icons/icon_x.png",
+            "sizes": "192x192",
+            "type": "image/png"
+          },{
+            "src": "/icons/icon_xx.png",
+            "sizes": "256x256",
+            "type": "image/png"
+          }]
+    }
+`
+function createImageFile(source, target, targetPath) {
+  // 创建manifest.json 图标
+  fs.readFile(source, (err, buffer) => {
+    if (err) {
+      console.error(err)
+      throw new Error('请检查图片格式或者源路径是否正确！')
+    } else {
+      // console.log(source, '读取图片成功')
+      const item = {
+        buffer,
+        target
+      }
+      bufferList.push(item)
+      if (bufferList.length == config.icons.length) {
+          bufferList.forEach(data => {
+            // 处理异步问题
+            fs.exists(targetPath, exists => {
+              if (exists) {
+                // 判断路径是否存在
+                fs.writeFile(data.target, data.buffer, error => {
+                  if (error) {
+                    console.error(error)
+                    throw new Error('请检查图片格式或者目的路径是否正确！')
+                  } else {
+                    // console.log(data.target, "写入图片成功");
+                  }
+                })
+              } else {
+                fs.mkdir(targetPath, err => {
+                  // 创建文件夹
+                  if (err) {
+                    return false
+                  }
+                  fs.writeFile(data.target, data.buffer, error => {
+                    if (error) {
+                      console.error(error)
+                      throw new Error('请检查图片格式或者目的路径是否正确！')
+                    } else {
+                      // console.log(data.target, "写入图片成功");
+                    }
+                  })
+                })
+                // 创建文件夹
+              }
+            })
+          })
+      }
+    }
+  })
+}
+const bufferList = []
+function createManifestFile() {
+  // 创建manifest.json文件
+  let targetPath = config.relativePath + '/icons/'
+  config.icons.forEach(file => {
+    // console.log(file.src)
+    let target = null
+    const pathSplit = file.src.split('/')
+    const fileName = pathSplit[pathSplit.length - 1]
+    target = targetPath + fileName
+    // console.log('target===', target)
+    const source = __dirname + file.src
+    // console.log(source)
+    createImageFile(source, target, targetPath)
+  })
+  // console.log('bufferList==>', bufferList)
+
+  createFile('manifest.json', Manifest)
+}
 
 function createServiceWorkerFile(data) {
   // 创建Service Worker文件
@@ -359,10 +501,28 @@ function createServiceWorkerFile(data) {
   }
   `
   const path = __dirname // 目前配置是当前路径，后期需要增加自定义路径功能，预留路径判断功能
+  // terser 
+  const options = {
+    toplevel: true,
+    compress: {
+        global_defs: {
+            "@console.log": "console.info"
+        },
+        passes: 2
+    },
+    output: {
+        beautify: false,
+        preamble: "/* minified */"
+    }
+  }
+  const result = terser.minify(data, options)
+  // console.log(result)
+  const uglifyDealWithData = result.code
+  // console.log(uglifyDealWithData)
   fs.exists(path, exists => {
     if (exists) {
       // 判断当前路径是否存在
-      createFile(serviceWorkerFileName, data)
+      createFile(serviceWorkerFileName, uglifyDealWithData)
       createFile(entryScript, indexFileData)
     } else {
       fs.mkdir(path, err => {
@@ -370,12 +530,13 @@ function createServiceWorkerFile(data) {
         if(err) {
           return false
         } else {
-          createFile(serviceWorkerFileName, data)
+          createFile(serviceWorkerFileName, uglifyDealWithData)
           createFile(entryScript, indexFileData)
         }
       })
     }
   })
+  createManifestFile()
 }
 
 function createFile (serviceWorkerFileName, data) {
@@ -394,5 +555,5 @@ function createFile (serviceWorkerFileName, data) {
 if (!config.isEntry && config.isDefault) {
   // readFileList(__dirname, filesList)
   // 默认执行文件
-  entryFile('index.html')
+  entryFile(config.defaultEntry)
 }
