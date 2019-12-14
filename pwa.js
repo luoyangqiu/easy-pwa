@@ -412,7 +412,7 @@ const bufferList = []
 function createManifestFile() {
   // 创建manifest.json文件
   let targetPath = config.relativeFilePath + config.iconsPath;
-      const paths = __dirname + '/' + targetPath
+      const paths = config.relativePath + "/" + targetPath;
       fs.mkdir(paths, err => {
         if (err) {
           console.log(err)
