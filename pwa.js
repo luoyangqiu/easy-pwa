@@ -409,26 +409,38 @@ function createImageFile(source, target) {
   })
 }
 const bufferList = []
+function multipleCreateImageFile(targetPath) {
+  // 批量操作图片文件
+  config.icons.forEach(file => {
+    // console.log(file.src)
+    let target = null
+    const pathSplit = file.src.split('/')
+    const fileName = pathSplit[pathSplit.length - 1]
+    target = targetPath + fileName
+    const source = __dirname + file.src
+    createImageFile(source, target)
+  })
+}
 function createManifestFile() {
   // 创建manifest.json文件
   let targetPath = config.relativeFilePath + config.iconsPath;
-      const paths = config.relativePath + "/" + targetPath;
-      fs.mkdir(paths, err => {
-        if (err) {
-          console.log(err)
-          throw new Error("创建目录失败！")
-        } else {
-          config.icons.forEach(file => {
-            // console.log(file.src)
-            let target = null
-            const pathSplit = file.src.split('/')
-            const fileName = pathSplit[pathSplit.length - 1]
-            target = targetPath + fileName
-            const source = __dirname + file.src
-            createImageFile(source, target)
-          })
-        }
-      })
+  const paths = config.relativePath + "/" + targetPath;
+    fs.access(paths, err => {
+      // 创建文件夹是否存在
+      if (err) {
+        fs.mkdir(paths, err => {
+          if (err) {
+            console.log(err)
+            throw new Error("创建目录失败！")
+          } else {
+            multipleCreateImageFile(targetPath)
+          }
+        })
+      } else {
+        multipleCreateImageFile(targetPath)
+      }
+    })
+
 
   // console.log('bufferList==>', bufferList)
 

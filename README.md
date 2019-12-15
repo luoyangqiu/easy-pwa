@@ -11,7 +11,7 @@ PWA是一种非常不错的技术，目前而言虽然还不能像原生APP一�
 全局安装安装使用
 
 ``` bash
-npm install easy-pwa -g
+npm install easy-pwa@latest -g
 // 1.进入你的项目己经构建的目录，例如你的项目名叫example;【open your Project folder】
 // 【For example】 C:\Users\Administrator\Desktop\example\
 // 2.在example目录下找到你己经构建好的目录地址，例如己经构建好的项目文件均放在【dist】目录下
@@ -28,7 +28,7 @@ npm install easy-pwa -g
 ``` bash
 // 1.进入你的项目己经构建的目录，例如你的项目名叫example;【open your Project folder】
 // 2.安装NPM包到开发依赖
-npm install easy-pwa -D
+npm install easy-pwa@latest -D
 // 3.配置package.json 执行脚本：【easy-pwa build dist/index.html】
 // 【For example】
 // ...

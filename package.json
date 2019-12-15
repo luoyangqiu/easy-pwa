@@ -1,6 +1,6 @@
 {
   "name": "easy-pwa",
-  "version": "1.0.8",
+  "version": "1.0.10",
   "description": "助您将现有的spa单页应用项目轻松升级成为PWA应用",
   "main": "pwa.js",
   "bin": {
@@ -15,5 +15,12 @@
     "commander": "^4.0.1",
     "jsdom": "^15.2.1",
     "terser": "^4.4.2"
-  }
+  },
+  "files": [
+    "package.json",
+    "pwa.js",
+    "img",
+    "README.md",
+    "manifest.json"
+  ]
 }
