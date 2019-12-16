@@ -1,6 +1,6 @@
 {
   "name": "easy-pwa",
-  "version": "1.0.16",
+  "version": "1.0.11",
   "description": "助您将现有的spa单页应用项目轻松升级成为PWA应用",
   "main": "pwa.es5.js",
   "bin": {
@@ -19,7 +19,8 @@
   },
   "files": [
     "package.json",
-    "lib",
+    "pwa.es5.js",
+    "pwa.js",
     "img",
     "README.md",
     ".babelrc",
