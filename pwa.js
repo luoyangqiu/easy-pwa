@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 //pwa
 const fs = require('fs');
 const path = require('path')
@@ -248,7 +249,7 @@ function entryFile(file) {
     // relativePath = relativePath.replace('\\node_modules\\easy-pwa', '')
     filePath = config.relativePath
   }
-  filePath = config.relativePath + "\\" + file
+  filePath = process.env.os && process.env.os == 'Windows_NT' ? config.relativePath + "\\" + file : config.relativePath + "/" + file
   let htmlText = null
   // console.log('filePath======>', filePath)
   fs.readFile(filePath, 'utf-8', (err, data) => {
