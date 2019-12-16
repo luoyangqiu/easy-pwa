@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 //pwa
 const fs = require('fs');
 const path = require('path')
